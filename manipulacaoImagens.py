@@ -19,46 +19,35 @@ def carregarImagem(caminhoImagem):
         # Máximo de níveis de intensidade
         maxNiveis = int(arquivo.readline().decode("utf-8").strip())
 
-        # Criação da matriz vazia para a nova imagem
-        matrizPixels = np.empty((altura, largura))
-
         listaPixels = list(arquivo.read())
 
+        conteudo = f"{codigoFormato}\n{largura} {altura}\n{maxNiveis}"
+        
+        print(conteudo)
+        
+        # Criação da matriz vazia para a nova imagem
+        matrizPixels = np.empty((altura, largura))
+        '''
         for y in largura:
             for x in altura:
-                
-
-carregarImagem("Entrada_EscalaCinza.pgm")
-# carregarImagem("img/800x800-5bits.pgm")
-
-def obterMaxNiveis(caminhoImagem):
-    with open(caminhoImagem, "rb") as arquivo:
-        arquivo.readline().decode("utf-8").strip()
-
-        while True:
-            linha = arquivo.readline().decode("utf-8").strip()
-            if not linha.startswith("#"):
-                break
-
-        maxNiveisOriginal = arquivo.readline().decode("utf-8").strip()
-
-    return int(maxNiveisOriginal)
+                print(x)
+        '''
 
 # Por enquanto, funciona apenas com imagens PGM com 8 ou 16 bits de intensidade, que são os formatos identificados pelo OpenCV
-def converterNiveisIntensidade(caminhoImagem, quantBits):
+def converterNiveisIntensidade(caminhoImagem, novaQuantBits):
     # Carrega a imagem mantendo a quantidade original de níveis de cinza
-    imagem = cv2.imread(caminhoImagem, -1)
+    imagem = carregarImagem(caminhoImagem)
 
     # Identificação da resolução da imagem
     largura = imagem.shape[1]
     altura = imagem.shape[0]
 
     # Identificação do máximo de níveis de cinza da imagem original
-    maxNiveisOriginal = obterMaxNiveis(caminhoImagem)
+    maxNiveisOriginal = imagem["maxNiveis"]
     print(f"Máx. Níveis (Original): {maxNiveisOriginal}")
     
     # Cálculo do máximo de níveis de cinza a partir da nova quantidade de bits
-    maxNiveisNova = (2 ** quantBits) - 1
+    maxNiveisNova = (2 ** novaQuantBits) - 1
     print(f"Máx. Níveis (Nova): {maxNiveisNova}")
 
     # Cálculo do fator de conversão
@@ -75,7 +64,7 @@ def converterNiveisIntensidade(caminhoImagem, quantBits):
         conteudo += "\n"
 
     # Salvando o arquivo com as intensidades convertidas
-    nomeImagem = f"{largura}x{altura}-{quantBits}bits.pgm"
+    nomeImagem = f"{largura}x{altura}-{novaQuantBits}bits.pgm"
     nomeArquivo = f"img/{nomeImagem}"
 
     Path("img").mkdir(exist_ok=True)
@@ -91,4 +80,6 @@ def amplificarBrilho(caminhoImagem, porcentagemBrilho):
     fatorBrilho = 1 + (porcentagemBrilho / 100)
 
 # Execução das funções
-# converterNiveisIntensidade("img/800x800-5bits.pgm", 8)
+# converterNiveisIntensidade("img/800x800-5bits.pgm", 5)
+carregarImagem("Entrada_EscalaCinza.pgm")
+# carregarImagem("img/800x800-5bits.pgm")
