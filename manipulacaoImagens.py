@@ -15,8 +15,11 @@ def carregarImagem(caminhoImagem):
         # Resolução da imagem
         largura, altura = map(int, linha.split())
 
-        # Máximo de níveis de intensidade
-        maxNiveis = int(arquivo.readline().strip())
+        # Máximo de níveis de intensidade (se for uma imagem PGM ou PPM)
+        if codigoFormato != "P1":
+            maxNiveis = int(arquivo.readline().strip())
+        else:
+            maxNiveis = 1
 
         # Leitura dos valores dos pixels da imagem
         listaPixels = arquivo.read().split()
@@ -104,6 +107,47 @@ def amplificarBrilho(caminhoImagem, porcentagemBrilho):
     nomeImagem = f"{nomeImagemOriginal}-{porcentagemBrilho}maisBrilho.pgm"
     salvarImagem(nomeImagem, conteudo)
 
+def converterPGMparaPBM(caminhoImagem):
+    # Carregando a imagem
+    imagem = carregarImagem(caminhoImagem)
+
+    # Cálculo do limiar a partir da quantidade de níveis de intensidade
+    # para definir o valor de um pixel como 0 ou 1
+    limiar = (imagem["maxNiveis"] + 1) / 2
+
+    # Definição do cabeçalho do arquivo
+    conteudo = f"P1\n{imagem['largura']} {imagem['altura']}\n"
+
+    # Verificação do valor do pixel para defini-lo como 0 ou 1
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            # Como o 1 está atuando como o preto, 0 é o branco
+            conteudo += f"{1 if pixel <= limiar else 0} "
+        conteudo += "\n"
+    
+    # Salvando a imagem no formato PBM
+    nomeImagemOriginal = caminhoImagem.replace("img/", "").replace(".pgm", "")
+    nomeImagem = f"{nomeImagemOriginal}.pbm"
+    salvarImagem(nomeImagem, conteudo)
+
+def aplicarNegativoPBM(caminhoImagem):
+    imagem = carregarImagem(caminhoImagem)
+
+    conteudo = f"P1\n{imagem['largura']} {imagem['altura']}\n"
+
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            conteudo += f"{0 if pixel == 1 else 1} "
+        conteudo += "\n"
+
+    # Salvando a imagem PBM negativa
+    nomeImagemOriginal = caminhoImagem.replace("img/", "").replace(".pbm", "")
+    nomeImagem = f"{nomeImagemOriginal}-Negativo.pbm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
-converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
-amplificarBrilho("img/800x800-5bits.pgm", 20)
+
+# converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
+# amplificarBrilho("img/800x800-5bits.pgm", 20)
+converterPGMparaPBM("Entrada_EscalaCinza.pgm")
+aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
