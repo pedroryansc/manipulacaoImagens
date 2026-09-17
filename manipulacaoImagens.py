@@ -6,10 +6,10 @@ def carregarImagem(caminhoImagem):
         # Código do formato de imagem
         codigoFormato = arquivo.readline().strip()
 
-        # Pulando linhas de comentário, caso existam
+        # Pulando linhas de comentário ou linhas vazias, caso existam
         while True:
             linha = arquivo.readline().strip()
-            if not linha.startswith("#"):
+            if (not linha.startswith("#")) and linha:
                 break
 
         # Resolução da imagem
@@ -168,10 +168,20 @@ def converterParaPGM_Binario(caminhoImagem):
     nomeImagem = f"{nomeImagemOriginal}-Binario.pgm"
     salvarImagem(nomeImagem, conteudo)
 
+def converterPPMparaPGM(caminhoImagem):
+    imagem = carregarImagem(caminhoImagem)
+
+    conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
 # amplificarBrilho("img/800x800-5bits.pgm", 20)
 # converterPGMparaPBM("Entrada_EscalaCinza.pgm")
 # aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
-converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
+# converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
+converterPPMparaPGM("Fig1.ppm")
