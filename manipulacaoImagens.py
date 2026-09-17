@@ -131,10 +131,12 @@ def converterPGMparaPBM(caminhoImagem):
     salvarImagem(nomeImagem, conteudo)
 
 def aplicarNegativoPBM(caminhoImagem):
+    # Carregando a imagem
     imagem = carregarImagem(caminhoImagem)
 
     conteudo = f"P1\n{imagem['largura']} {imagem['altura']}\n"
 
+    # Invertendo o valor de cada pixel da imagem
     for linha in imagem["matrizPixels"]:
         for pixel in linha:
             conteudo += f"{0 if pixel == 1 else 1} "
@@ -145,9 +147,31 @@ def aplicarNegativoPBM(caminhoImagem):
     nomeImagem = f"{nomeImagemOriginal}-Negativo.pbm"
     salvarImagem(nomeImagem, conteudo)
 
+def converterParaPGM_Binario(caminhoImagem):
+    # Carregando a imagem
+    imagem = carregarImagem(caminhoImagem)
+
+    # Cabeçalho da imagem PGM "binária" (Ex: Imagem de 8 bits -> 0 ou 255)
+    conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    # Cálculo do limiar (Ex: 8 bits -> Limiar = 128)
+    limiar = (imagem["maxNiveis"] + 1) / 2
+
+    # Definindo os pixels a partir do limiar
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            conteudo += f"{0 if pixel <= limiar else imagem['maxNiveis']} "
+        conteudo += "\n"
+    
+    # Salvando a imagem PGM binária
+    nomeImagemOriginal = caminhoImagem.replace(".pgm", "")
+    nomeImagem = f"{nomeImagemOriginal}-Binario.pgm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
 # amplificarBrilho("img/800x800-5bits.pgm", 20)
-converterPGMparaPBM("Entrada_EscalaCinza.pgm")
-aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
+# converterPGMparaPBM("Entrada_EscalaCinza.pgm")
+# aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
+converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
