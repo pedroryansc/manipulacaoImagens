@@ -197,6 +197,28 @@ def converterPPMparaPGM(caminhoImagem):
     nomeImagem = f"{nomeImagemOriginal}.pgm"
     salvarImagem(nomeImagem, conteudo)
 
+def aplicarEscalaCinza(caminhoImagem):
+    # Carregando a imagem PPM
+    imagem = carregarImagem(caminhoImagem)
+
+    # Cabeçalho da nova imagem
+    conteudo = f"P3\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    # Cálculo da média dos valores RGB de cada pixel
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            mediaRGB = round(sum(pixel) / 3)
+
+            # Atribuindo a média para cada um dos 3 valores do pixel (RGB)
+            for valor in pixel:
+                conteudo += f"{mediaRGB} "
+        conteudo += "\n"
+
+    # Salvando a imagem PPM com a escala de cinza aplicada
+    nomeImagemOriginal = caminhoImagem.replace(".ppm", "")
+    nomeImagem = f"{nomeImagemOriginal}-EscalaCinza.ppm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
@@ -205,4 +227,5 @@ def converterPPMparaPGM(caminhoImagem):
 # aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
 # converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
 # converterPPMparaPGM("Fig1.ppm")
-converterPPMparaPGM("Fig4.ppm")
+# converterPPMparaPGM("Fig4.ppm")
+aplicarEscalaCinza("Fig4.ppm")
