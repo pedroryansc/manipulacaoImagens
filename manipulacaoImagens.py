@@ -9,7 +9,7 @@ def carregarImagem(caminhoImagem):
         # Pulando linhas de comentário ou linhas vazias, caso existam
         while True:
             linha = arquivo.readline().strip()
-            if (not linha.startswith("#")) and linha:
+            if linha and (not linha.startswith("#")):
                 break
 
         # Resolução da imagem
@@ -23,15 +23,24 @@ def carregarImagem(caminhoImagem):
 
         # Leitura dos valores dos pixels da imagem
         listaPixels = arquivo.read().split()
-        
-        # Criação da matriz vazia para a nova imagem
-        matrizPixels = np.empty((altura, largura))
+
+        # Criação da matriz vazia para preencher com os valores da imagem
+        if codigoFormato != "P3":
+            matrizPixels = np.empty((altura, largura))
+        else:
+            # Se for uma imagem PPM, cada pixel é um array com 3 posições (RGB)
+            matrizPixels = np.empty((altura, largura, 3))
 
         indicePixel = 0
-        for y in range(largura):
-            for x in range(altura):
-                matrizPixels[y][x] = listaPixels[indicePixel]
-                indicePixel += 1
+        for y in range(altura):
+            for x in range(largura):
+                if codigoFormato != "P3":
+                    matrizPixels[y][x] = listaPixels[indicePixel]
+                    indicePixel += 1
+                else:
+                    for z in range(3):
+                        matrizPixels[y][x][z] = listaPixels[indicePixel]
+                        indicePixel += 1
 
         imagem = {
             "codigoFormato" : codigoFormato,
@@ -169,13 +178,24 @@ def converterParaPGM_Binario(caminhoImagem):
     salvarImagem(nomeImagem, conteudo)
 
 def converterPPMparaPGM(caminhoImagem):
+    # Carregando a imagem PPM
     imagem = carregarImagem(caminhoImagem)
 
+    # Cabeçalho da imagem PGM
     conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
 
+    # Cálculo da média dos valores RGB de cada pixel
     for linha in imagem["matrizPixels"]:
         for pixel in linha:
-            
+            mediaRGB = round(sum(pixel) / 3)
+
+            conteudo += f"{mediaRGB} "
+        conteudo += "\n"
+
+    # Salvando a imagem convertida para PGM
+    nomeImagemOriginal = caminhoImagem.replace(".ppm", "")
+    nomeImagem = f"{nomeImagemOriginal}.pgm"
+    salvarImagem(nomeImagem, conteudo)
 
 # Execução das funções
 
@@ -184,4 +204,5 @@ def converterPPMparaPGM(caminhoImagem):
 # converterPGMparaPBM("Entrada_EscalaCinza.pgm")
 # aplicarNegativoPBM("img/Entrada_EscalaCinza.pbm")
 # converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
-converterPPMparaPGM("Fig1.ppm")
+# converterPPMparaPGM("Fig1.ppm")
+converterPPMparaPGM("Fig4.ppm")
