@@ -219,6 +219,36 @@ def aplicarEscalaCinza(caminhoImagem):
     nomeImagem = f"{nomeImagemOriginal}-EscalaCinza.ppm"
     salvarImagem(nomeImagem, conteudo)
 
+def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
+    # Carregando a imagem
+    imagem = carregarImagem(caminhoImagem)
+
+    # Cabeçalho da nova imagem
+    conteudo = f"P3\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    # Alterando (ou mantendo) as cores a partir dos parâmetros passados
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            for cor in range(3):
+                # Se for o valor de Red e se Red deve ser alterado,
+                if(cor == 0 and valorR >= 0):
+                    conteudo += f"{valorR} "
+                # Se for o valor de Green e se Green deve ser alterado,
+                elif(cor == 1 and valorG >= 0):
+                    conteudo += f"{valorG} "
+                # Se for o valor de Blue e se Blue deve ser alterado,
+                elif(cor == 2 and valorB >= 0):
+                    conteudo += f"{valorB} "
+                # Se a cor X não deve ser alterada, mantém o valor original
+                else:
+                    conteudo += f"{int(pixel[cor])} "
+        conteudo += "\n"
+
+    # Salvando a imagem
+    nomeImagemOriginal = caminhoImagem.replace(".ppm", "")
+    nomeImagem = f"{nomeImagemOriginal}-{valorR if valorR >= 0 else 'R'}-{valorG if valorG >= 0 else 'G'}-{valorB if valorB >= 0 else 'B'}.ppm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
@@ -228,4 +258,10 @@ def aplicarEscalaCinza(caminhoImagem):
 # converterParaPGM_Binario("Entrada_EscalaCinza.pgm")
 # converterPPMparaPGM("Fig1.ppm")
 # converterPPMparaPGM("Fig4.ppm")
-aplicarEscalaCinza("Fig4.ppm")
+# aplicarEscalaCinza("Fig4.ppm")
+alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
+alterarValoresRGB("Fig4.ppm", valorR=0, valorB=0)
+alterarValoresRGB("Fig4.ppm", valorR=0, valorG=0)
+alterarValoresRGB("Fig4.ppm", valorG=255, valorB=255)
+alterarValoresRGB("Fig4.ppm", valorR=255, valorB=255)
+alterarValoresRGB("Fig4.ppm", valorR=255, valorG=255)
