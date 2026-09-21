@@ -1,5 +1,6 @@
 import numpy as np
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 def carregarImagem(caminhoImagem):
     with open(caminhoImagem, "r") as arquivo:
@@ -249,6 +250,29 @@ def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
     nomeImagem = f"{nomeImagemOriginal}-{valorR if valorR >= 0 else 'R'}-{valorG if valorG >= 0 else 'G'}-{valorB if valorB >= 0 else 'B'}.ppm"
     salvarImagem(nomeImagem, conteudo)
 
+def gerarHistograma(caminhoImagem):
+    imagem = carregarImagem(caminhoImagem)
+
+    listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
+        
+    if imagem["codigoFormato"] != "P3":
+        plt.hist(listaPixels, rwidth=0.95)
+    else:
+        valoresR = [pixel[0] for pixel in listaPixels]
+        valoresG = [pixel[1] for pixel in listaPixels]
+        valoresB = [pixel[2] for pixel in listaPixels]
+
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+
+        ax1.hist(valoresR, rwidth=0.95, color="red")
+        ax2.hist(valoresG, rwidth=0.95, color="green")
+        ax3.hist(valoresB, rwidth=0.95, color="blue")
+    
+    plt.title("Frequência dos valores dos pixels")
+    plt.xlabel("Valores dos pixels")
+    plt.ylabel("Frequência")
+    plt.show()
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
@@ -259,9 +283,6 @@ def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
 # converterPPMparaPGM("Fig1.ppm")
 # converterPPMparaPGM("Fig4.ppm")
 # aplicarEscalaCinza("Fig4.ppm")
-alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
-alterarValoresRGB("Fig4.ppm", valorR=0, valorB=0)
-alterarValoresRGB("Fig4.ppm", valorR=0, valorG=0)
-alterarValoresRGB("Fig4.ppm", valorG=255, valorB=255)
-alterarValoresRGB("Fig4.ppm", valorR=255, valorB=255)
-alterarValoresRGB("Fig4.ppm", valorR=255, valorG=255)
+# alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
+# gerarHistograma("Entrada_EscalaCinza.pgm")
+gerarHistograma("Fig1.ppm")
