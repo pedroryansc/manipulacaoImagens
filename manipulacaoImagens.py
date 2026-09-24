@@ -258,7 +258,7 @@ def histogramaValoresPixels(caminhoImagem):
     if imagem["codigoFormato"] != "P3":
         fig, ax = plt.subplots(1, 1)
         
-        ax.hist(listaPixels, rwidth=0.95, color="gray")
+        ax.hist(listaPixels, bins=imagem["maxNiveis"], color="gray")
     else:
         valoresR = [pixel[0] for pixel in listaPixels]
         valoresG = [pixel[1] for pixel in listaPixels]
@@ -266,9 +266,9 @@ def histogramaValoresPixels(caminhoImagem):
 
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
-        ax1.hist(valoresR, rwidth=0.95, color="red")
-        ax2.hist(valoresG, rwidth=0.95, color="green")
-        ax3.hist(valoresB, rwidth=0.95, color="blue")
+        ax1.hist(valoresR, bins=imagem["maxNiveis"], color="red")
+        ax2.hist(valoresG, bins=imagem["maxNiveis"], color="green")
+        ax3.hist(valoresB, bins=imagem["maxNiveis"], color="blue")
     
     fig.suptitle("Frequência dos valores dos pixels")
     fig.supxlabel("Valores dos pixels")
@@ -276,6 +276,51 @@ def histogramaValoresPixels(caminhoImagem):
     
     plt.tight_layout()
     plt.show()
+
+def realceLinear(caminhoImagem):
+    imagem = carregarImagem(caminhoImagem)
+
+    listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
+
+    conteudo = f"{imagem['codigoFormato']}\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    '''
+    # Verificando se há outliers
+    q1 = np.percentile(listaPixels, 25)
+    q3 = np.percentile(listaPixels, 75)
+
+    iqr = q3 - q1
+
+    limiteInferior = q1 - 1.5 * iqr
+    limiteSuperior = q3 + 1.5 * iqr
+
+    outliers = [pixel for pixel in listaPixels if pixel < limiteInferior and pixel > limiteSuperior]
+    '''
+
+    if imagem["codigoFormato"] != "P3":
+        pixelMin = min(listaPixels)
+        pixelMax = max(listaPixels)
+        a = 255 / (pixelMax - pixelMin)
+        b = - a * pixelMin
+    else:
+        pixelMin = min([pixel[0] for pixel in listaPixels])
+
+    # Realçando os pixels
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            pixelRealcado = round(a * pixel + b)
+
+            if pixelRealcado < 0:
+                pixelRealcado = 0
+            elif pixelRealcado > imagem["maxNiveis"]:
+                pixelRealcado = imagem["maxNiveis"]
+
+            conteudo += f"{pixelRealcado} "
+        conteudo += "\n"
+    
+    nomeImagemOriginal = caminhoImagem.replace(".pgm", "")
+    nomeImagem = f"{nomeImagemOriginal}-RealceLinear.pgm"
+    salvarImagem(nomeImagem, conteudo)
 
 # Execução das funções
 
@@ -288,5 +333,9 @@ def histogramaValoresPixels(caminhoImagem):
 # converterPPMparaPGM("Fig4.ppm")
 # aplicarEscalaCinza("Fig4.ppm")
 # alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
-histogramaValoresPixels("Entrada_EscalaCinza.pgm")
+# realceLinear("Entrada_EscalaCinza.pgm")
+# histogramaValoresPixels("Entrada_EscalaCinza.pgm")
+# histogramaValoresPixels("img/Entrada_EscalaCinza-RealceLinear.pgm")
+realceLinear("Fig1.ppm")
 histogramaValoresPixels("Fig1.ppm")
+histogramaValoresPixels("img/Fig1-RealceLinear.ppm")
