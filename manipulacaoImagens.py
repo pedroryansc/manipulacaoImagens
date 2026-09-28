@@ -318,38 +318,50 @@ def realceLinear(caminhoImagem):
         pixelMax = max(listaPixels)
         a = imagem["maxNiveis"] / (pixelMax - pixelMin) # Em uma imagem com 8 bits por valor: a = 255 / (90 - 0)
         b = - a * pixelMin
+
+        # Aplicando o realce linear em cada pixel
+        for linha in imagem["matrizPixels"]:
+            for pixel in linha:
+                pixelRealcado = round(a * pixel + b)
+
+                # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
+                if pixelRealcado < 0:
+                    pixelRealcado = 0
+                elif pixelRealcado > imagem["maxNiveis"]:
+                    pixelRealcado = imagem["maxNiveis"]
+
+                conteudo += f"{pixelRealcado} "
+            conteudo += "\n"
     # Caso seja uma imagem PPM
     else:
-        pixelMin = []
-        pixelMax = []
         a = []
         b = []
 
         for cor in range(3):
-            pixelMin.append(min([pixel[cor] for pixel in listaPixels]))
-            pixelMax.append(max([pixel[cor] for pixel in listaPixels]))
-            a.append(imagem["maxNiveis"] / (pixelMax[cor] - pixelMin[cor]))
-            b.append(a[cor] * pixelMin[cor])
+            pixelMin = min([pixel[cor] for pixel in listaPixels])
+            pixelMax = max([pixel[cor] for pixel in listaPixels])
+            a.append(imagem["maxNiveis"] / (pixelMax - pixelMin))
+            b.append(- a[cor] * pixelMin)
 
-        print(pixelMin)
+            print(f"{cor}. Xmin = {pixelMin} | Xmax = {pixelMax} | a = {a[cor]} | b = {b[cor]}")
 
-    # Aplicando o realce linear em cada pixel
-    for linha in imagem["matrizPixels"]:
-        for pixel in linha:
-            pixelRealcado = round(a * pixel + b)
+        # Aplicando o realce linear em cada pixel
+        for linha in imagem["matrizPixels"]:
+            for pixel in linha:
+                for cor in range(3):
+                    valorRealcado = round(a[cor] * pixel[cor] + b[cor])
 
-            # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
-            if pixelRealcado < 0:
-                pixelRealcado = 0
-            elif pixelRealcado > imagem["maxNiveis"]:
-                pixelRealcado = imagem["maxNiveis"]
+                    # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
+                    if valorRealcado < 0:
+                        valorRealcado = 0
+                    elif valorRealcado > imagem["maxNiveis"]:
+                        valorRealcado = imagem["maxNiveis"]
 
-            conteudo += f"{pixelRealcado} "
-        conteudo += "\n"
+                    conteudo += f"{valorRealcado} "
+            conteudo += "\n"
 
     # Salvando a imagem
-    nomeImagemOriginal = caminhoImagem.replace(".pgm", "")
-    nomeImagem = f"{nomeImagemOriginal}-RealceLinear.pgm"
+    nomeImagem = f"RealceLinear-{caminhoImagem}"
     salvarImagem(nomeImagem, conteudo)
 
 # Execução das funções
@@ -366,6 +378,6 @@ def realceLinear(caminhoImagem):
 # realceLinear("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("img/Entrada_EscalaCinza-RealceLinear.pgm")
-# realceLinear("Fig1.ppm")
-histogramaValoresPixels("Fig1.ppm")
-# histogramaValoresPixels("img/Fig1-RealceLinear.ppm")
+realceLinear("Fig1.ppm")
+# histogramaValoresPixels("Fig1.ppm")
+# histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
