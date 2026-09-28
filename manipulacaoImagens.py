@@ -251,26 +251,37 @@ def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
     salvarImagem(nomeImagem, conteudo)
 
 def histogramaValoresPixels(caminhoImagem):
+    # Carregando a imagem
     imagem = carregarImagem(caminhoImagem)
 
+    # Organização dos valores dos pixels da matriz em uma lista única
     listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
-        
+
+    # Definindo os intervalos das bins para apresentar a frequência de cada valor (de 0 a 255, por exemplo)
+    limitesBins = np.arange(-0.5, imagem["maxNiveis"] + 1.5, 1)
+    
     if imagem["codigoFormato"] != "P3":
+        # Histograma dos valores de uma imagem PBM ou PGM
         fig, ax = plt.subplots(1, 1)
         
-        ax.hist(listaPixels, bins=imagem["maxNiveis"], color="gray")
+        ax.hist(listaPixels, bins=limitesBins, color="gray", rwidth=0.95)
     else:
+        # Organização dos valores de cada cor da imagem PPM em listas
         valoresR = [pixel[0] for pixel in listaPixels]
         valoresG = [pixel[1] for pixel in listaPixels]
         valoresB = [pixel[2] for pixel in listaPixels]
 
+        # Histogramas dos valores de cada cor (RGB)
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
-        ax1.hist(valoresR, bins=imagem["maxNiveis"], color="red")
-        ax2.hist(valoresG, bins=imagem["maxNiveis"], color="green")
-        ax3.hist(valoresB, bins=imagem["maxNiveis"], color="blue")
-    
-    fig.suptitle("Frequência dos valores dos pixels")
+        ax1.hist(valoresR, bins=limitesBins, color="red", rwidth=0.95)
+        ax2.hist(valoresG, bins=limitesBins, color="green", rwidth=0.95)
+        ax3.hist(valoresB, bins=limitesBins, color="blue", rwidth=0.95)
+
+    # Definindo os detalhes da plotagem
+    nomeImagem = caminhoImagem.replace("img/", "")
+
+    fig.suptitle(f"Frequência dos valores dos pixels - {nomeImagem}")
     fig.supxlabel("Valores dos pixels")
     fig.supylabel("Frequência")
     
@@ -278,14 +289,17 @@ def histogramaValoresPixels(caminhoImagem):
     plt.show()
 
 def realceLinear(caminhoImagem):
+    # Carregando a imagem
     imagem = carregarImagem(caminhoImagem)
 
+    # Organizando os valores dos pixels em uma lista única
     listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
 
+    # Cabeçalho da imagem com realce linear
     conteudo = f"{imagem['codigoFormato']}\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
 
     '''
-    # Verificando se há outliers
+    # Verificando se há outliers entre os pixels da imagem
     q1 = np.percentile(listaPixels, 25)
     q3 = np.percentile(listaPixels, 75)
 
@@ -294,22 +308,37 @@ def realceLinear(caminhoImagem):
     limiteInferior = q1 - 1.5 * iqr
     limiteSuperior = q3 + 1.5 * iqr
 
-    outliers = [pixel for pixel in listaPixels if pixel < limiteInferior and pixel > limiteSuperior]
+    pixelsInliers = [pixel for pixel in listaPixels if pixel >= limiteInferior and pixel <= limiteSuperior]
     '''
 
+    # Caso seja uma imagem PGM
     if imagem["codigoFormato"] != "P3":
+        # Calcula os coeficientes da função para a transformação linear
         pixelMin = min(listaPixels)
         pixelMax = max(listaPixels)
-        a = 255 / (pixelMax - pixelMin)
+        a = imagem["maxNiveis"] / (pixelMax - pixelMin) # Em uma imagem com 8 bits por valor: a = 255 / (90 - 0)
         b = - a * pixelMin
+    # Caso seja uma imagem PPM
     else:
-        pixelMin = min([pixel[0] for pixel in listaPixels])
+        pixelMin = []
+        pixelMax = []
+        a = []
+        b = []
 
-    # Realçando os pixels
+        for cor in range(3):
+            pixelMin.append(min([pixel[cor] for pixel in listaPixels]))
+            pixelMax.append(max([pixel[cor] for pixel in listaPixels]))
+            a.append(imagem["maxNiveis"] / (pixelMax[cor] - pixelMin[cor]))
+            b.append(a[cor] * pixelMin[cor])
+
+        print(pixelMin)
+
+    # Aplicando o realce linear em cada pixel
     for linha in imagem["matrizPixels"]:
         for pixel in linha:
             pixelRealcado = round(a * pixel + b)
 
+            # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
             if pixelRealcado < 0:
                 pixelRealcado = 0
             elif pixelRealcado > imagem["maxNiveis"]:
@@ -317,7 +346,8 @@ def realceLinear(caminhoImagem):
 
             conteudo += f"{pixelRealcado} "
         conteudo += "\n"
-    
+
+    # Salvando a imagem
     nomeImagemOriginal = caminhoImagem.replace(".pgm", "")
     nomeImagem = f"{nomeImagemOriginal}-RealceLinear.pgm"
     salvarImagem(nomeImagem, conteudo)
@@ -336,6 +366,6 @@ def realceLinear(caminhoImagem):
 # realceLinear("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("img/Entrada_EscalaCinza-RealceLinear.pgm")
-realceLinear("Fig1.ppm")
+# realceLinear("Fig1.ppm")
 histogramaValoresPixels("Fig1.ppm")
-histogramaValoresPixels("img/Fig1-RealceLinear.ppm")
+# histogramaValoresPixels("img/Fig1-RealceLinear.ppm")
