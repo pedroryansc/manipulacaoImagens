@@ -298,71 +298,102 @@ def realceLinear(caminhoImagem):
     # Cabeçalho da imagem com realce linear
     conteudo = f"{imagem['codigoFormato']}\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
 
-    '''
-    # Verificando se há outliers entre os pixels da imagem
-    q1 = np.percentile(listaPixels, 25)
-    q3 = np.percentile(listaPixels, 75)
-
-    iqr = q3 - q1
-
-    limiteInferior = q1 - 1.5 * iqr
-    limiteSuperior = q3 + 1.5 * iqr
-
-    pixelsInliers = [pixel for pixel in listaPixels if pixel >= limiteInferior and pixel <= limiteSuperior]
-    '''
-
     # Caso seja uma imagem PGM
     if imagem["codigoFormato"] != "P3":
-        # Calcula os coeficientes da função para a transformação linear
-        pixelMin = min(listaPixels)
-        pixelMax = max(listaPixels)
-        a = imagem["maxNiveis"] / (pixelMax - pixelMin) # Em uma imagem com 8 bits por valor: a = 255 / (90 - 0)
-        b = - a * pixelMin
-
-        # Aplicando o realce linear em cada pixel
-        for linha in imagem["matrizPixels"]:
-            for pixel in linha:
-                pixelRealcado = round(a * pixel + b)
-
-                # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
-                if pixelRealcado < 0:
-                    pixelRealcado = 0
-                elif pixelRealcado > imagem["maxNiveis"]:
-                    pixelRealcado = imagem["maxNiveis"]
-
-                conteudo += f"{pixelRealcado} "
-            conteudo += "\n"
+        conteudo = realceLinearPGM(imagem, listaPixels, conteudo)
     # Caso seja uma imagem PPM
     else:
-        a = []
-        b = []
-
-        for cor in range(3):
-            pixelMin = min([pixel[cor] for pixel in listaPixels])
-            pixelMax = max([pixel[cor] for pixel in listaPixels])
-            a.append(imagem["maxNiveis"] / (pixelMax - pixelMin))
-            b.append(- a[cor] * pixelMin)
-
-            print(f"{cor}. Xmin = {pixelMin} | Xmax = {pixelMax} | a = {a[cor]} | b = {b[cor]}")
-
-        # Aplicando o realce linear em cada pixel
-        for linha in imagem["matrizPixels"]:
-            for pixel in linha:
-                for cor in range(3):
-                    valorRealcado = round(a[cor] * pixel[cor] + b[cor])
-
-                    # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
-                    if valorRealcado < 0:
-                        valorRealcado = 0
-                    elif valorRealcado > imagem["maxNiveis"]:
-                        valorRealcado = imagem["maxNiveis"]
-
-                    conteudo += f"{valorRealcado} "
-            conteudo += "\n"
-
+        conteudo = realceLinearPPM(imagem, listaPixels, conteudo)
+        
     # Salvando a imagem
     nomeImagem = f"RealceLinear-{caminhoImagem}"
     salvarImagem(nomeImagem, conteudo)
+
+def realceLinearPGM(imagem, listaPixels, conteudo):
+    # Pegando apenas os pixels inliers, removendo os outliers
+    pixelsInliers = removerOutliers(listaPixels)
+        
+    # Calculando os coeficientes da função linear
+    a, b = coefsFuncaoLinear(pixelsInliers, imagem["maxNiveis"])
+
+    # Aplicando o realce linear em cada pixel
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            pixelRealcado = aplicarRealceLinear(pixel, a, b, imagem["maxNiveis"])
+            conteudo += f"{pixelRealcado} "
+        conteudo += "\n"
+    
+    return conteudo
+
+def realceLinearPPM(imagem, listaPixels, conteudo):
+    a = []
+    b = []
+
+    for cor in range(3):
+        # Organizando uma lista com os valores da cor atual de cada pixel
+        valoresCor = [pixel[cor] for pixel in listaPixels]
+            
+        # Pegando apenas os dados inliers (ou seja, dentro dos limites)
+        valoresInliers = removerOutliers(valoresCor)
+        
+        # Calcula os coeficientes da função linear para o canal atual
+        coefA, coefB = coefsFuncaoLinear(valoresInliers, imagem["maxNiveis"])
+        
+        a.append(coefA)
+        b.append(coefB)
+
+    # Aplicando uma função de realce linear diferente para cada canal da imagem
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            for cor in range(3):
+                valorRealcado = aplicarRealceLinear(pixel[cor], a[cor], b[cor], imagem["maxNiveis"])
+                conteudo += f"{valorRealcado} "
+        conteudo += "\n"
+        
+    return conteudo
+
+def removerOutliers(listaValores):
+    # Verificando se há outliers entre os valores da imagem
+    q1 = np.percentile(listaValores, 25) # 1º valores (25%)
+    q3 = np.percentile(listaValores, 75) # 3º quartil (75%)
+    
+    # Cálculo do Intervalo Interquartil (IQR)
+    iqr = q3 - q1
+    
+    # Cálculo dos limites inferior (li) e superior (LS)
+    limiteInferior = q1 - 1.5 * iqr
+    limiteSuperior = q3 + 1.5 * iqr
+    
+    print(f"Q1 = {q1} | Q3 = {q3} | IQR = {iqr} | li = {limiteInferior} | LS = {limiteSuperior}")
+    
+    # Pegando apenas os valores inliers (ou seja, dentro dos limites)
+    valoresInliers = [valor for valor in listaValores if valor >= limiteInferior and valor <= limiteSuperior]
+
+    return valoresInliers
+
+def coefsFuncaoLinear(listaValores, maxNiveisImagem):
+    # Identifica o menor e o maior valor do conjunto
+    valorMin = min(listaValores)
+    valorMax = max(listaValores)
+        
+    # Calcula os coeficientes da função para a transformação linear
+    a = maxNiveisImagem / (valorMax - valorMin) # Em uma imagem com 8 bits por valor, ex.: a = 255 / (90 - 0)
+    b = - a * valorMin
+    
+    print(f"Xmin = {valorMin} | Xmax = {valorMax} | a = {a} | b = {b}")
+    
+    return a, b
+
+def aplicarRealceLinear(valor, a, b, maxNiveisImagem):
+    valorRealcado = round(a * valor + b)
+
+    # Caso o valor realçado ultrapasse os limites de valores (Ex.: 0 a 255), o valor é colocado dentro dos limites
+    if valorRealcado < 0:
+        valorRealcado = 0
+    elif valorRealcado > maxNiveisImagem:
+        valorRealcado = maxNiveisImagem
+        
+    return valorRealcado
 
 # Execução das funções
 
@@ -375,9 +406,9 @@ def realceLinear(caminhoImagem):
 # converterPPMparaPGM("Fig4.ppm")
 # aplicarEscalaCinza("Fig4.ppm")
 # alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
-# realceLinear("Entrada_EscalaCinza.pgm")
+realceLinear("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("img/Entrada_EscalaCinza-RealceLinear.pgm")
-realceLinear("Fig1.ppm")
+# realceLinear("Fig1.ppm")
 # histogramaValoresPixels("Fig1.ppm")
 # histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
