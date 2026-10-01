@@ -1,8 +1,9 @@
+import tifffile
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-def carregarImagem(caminhoImagem):
+def carregarImagemNetpbm(caminhoImagem):
     with open(caminhoImagem, "r") as arquivo:
         # Código do formato de imagem
         codigoFormato = arquivo.readline().strip()
@@ -53,6 +54,24 @@ def carregarImagem(caminhoImagem):
 
         return imagem
 
+def carregarImagemTIF(caminhoImagem):
+    with tifffile.TiffFile(caminhoImagem) as arquivo:
+        pagina = arquivo.pages[0]
+
+        largura = pagina.shape[1]
+        altura = pagina.shape[0]
+        
+        print(f"Largura: {largura} | Altura: {altura}")
+
+        matrizPixels = arquivo.asarray()
+
+        print(f"Tamanho da matriz = {matrizPixels}")
+
+        bitsPorPixel = pagina.tags["BitsPerSample"].value
+        maxNiveis = (2 ** bitsPorPixel) - 1
+
+        print(f"Valor máximo da imagem: {maxNiveis}")
+
 def salvarImagem(nomeImagem, conteudo):
     nomeArquivo = f"img/{nomeImagem}"
 
@@ -65,7 +84,7 @@ def salvarImagem(nomeImagem, conteudo):
 
 def converterNiveisIntensidade(caminhoImagem, novaQuantBits):
     # Carrega a imagem mantendo a quantidade original de níveis de cinza
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Identificação do máximo de níveis de cinza da imagem original
     maxNiveisOriginal = imagem["maxNiveis"]
@@ -94,7 +113,7 @@ def converterNiveisIntensidade(caminhoImagem, novaQuantBits):
 
 def amplificarBrilho(caminhoImagem, porcentagemBrilho):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cálculo do fator do brilho
     fatorBrilho = 1 + (porcentagemBrilho / 100)
@@ -119,7 +138,7 @@ def amplificarBrilho(caminhoImagem, porcentagemBrilho):
 
 def converterPGMparaPBM(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cálculo do limiar a partir da quantidade de níveis de intensidade
     # para definir o valor de um pixel como 0 ou 1
@@ -142,7 +161,7 @@ def converterPGMparaPBM(caminhoImagem):
 
 def aplicarNegativoPBM(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     conteudo = f"P1\n{imagem['largura']} {imagem['altura']}\n"
 
@@ -159,7 +178,7 @@ def aplicarNegativoPBM(caminhoImagem):
 
 def converterParaPGM_Binario(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cabeçalho da imagem PGM "binária" (Ex: Imagem de 8 bits -> 0 ou 255)
     conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
@@ -180,7 +199,7 @@ def converterParaPGM_Binario(caminhoImagem):
 
 def converterPPMparaPGM(caminhoImagem):
     # Carregando a imagem PPM
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cabeçalho da imagem PGM
     conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
@@ -200,7 +219,7 @@ def converterPPMparaPGM(caminhoImagem):
 
 def aplicarEscalaCinza(caminhoImagem):
     # Carregando a imagem PPM
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cabeçalho da nova imagem
     conteudo = f"P3\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
@@ -222,7 +241,7 @@ def aplicarEscalaCinza(caminhoImagem):
 
 def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Cabeçalho da nova imagem
     conteudo = f"P3\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
@@ -252,7 +271,7 @@ def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
 
 def histogramaValoresPixels(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Organização dos valores dos pixels da matriz em uma lista única
     listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
@@ -290,7 +309,7 @@ def histogramaValoresPixels(caminhoImagem):
 
 def realceLinear(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagem(caminhoImagem)
+    imagem = carregarImagemNetpbm(caminhoImagem)
 
     # Organizando os valores dos pixels em uma lista única
     listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
@@ -406,9 +425,10 @@ def aplicarRealceLinear(valor, a, b, maxNiveisImagem):
 # converterPPMparaPGM("Fig4.ppm")
 # aplicarEscalaCinza("Fig4.ppm")
 # alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
-realceLinear("Entrada_EscalaCinza.pgm")
+# realceLinear("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("Entrada_EscalaCinza.pgm")
-# histogramaValoresPixels("img/Entrada_EscalaCinza-RealceLinear.pgm")
+# histogramaValoresPixels("img/RealceLinear-Entrada_EscalaCinza.pgm")
 # realceLinear("Fig1.ppm")
 # histogramaValoresPixels("Fig1.ppm")
 # histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
+carregarImagemTIF("Fig0316(1)(top_left).tif")
