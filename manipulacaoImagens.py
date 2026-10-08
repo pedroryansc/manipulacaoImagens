@@ -2,6 +2,7 @@ import tifffile
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+from collections import Counter
 
 def carregarImagemNetpbm(caminhoImagem):
     with open(caminhoImagem, "r") as arquivo:
@@ -58,19 +59,25 @@ def carregarImagemTIF(caminhoImagem):
     with tifffile.TiffFile(caminhoImagem) as arquivo:
         pagina = arquivo.pages[0]
 
+        # Dimensões da imagem
         largura = pagina.shape[1]
         altura = pagina.shape[0]
-        
-        print(f"Largura: {largura} | Altura: {altura}")
 
+        # Obtendo a matriz com os valores dos pixels
         matrizPixels = arquivo.asarray()
 
-        print(f"Tamanho da matriz = {matrizPixels}")
-
+        # Calculando o nível máximo de intensidade a partir da quantidade de bits
         bitsPorPixel = pagina.tags["BitsPerSample"].value
         maxNiveis = (2 ** bitsPorPixel) - 1
 
-        print(f"Valor máximo da imagem: {maxNiveis}")
+        imagem = {
+            "largura" : largura,
+            "altura" : altura,
+            "matrizPixels" : matrizPixels,
+            "maxNiveis" : maxNiveis
+        }
+
+        return imagem
 
 def salvarImagem(nomeImagem, conteudo):
     nomeArquivo = f"img/{nomeImagem}"
@@ -271,7 +278,10 @@ def alterarValoresRGB(caminhoImagem, valorR=-1, valorG=-1, valorB=-1):
 
 def histogramaValoresPixels(caminhoImagem):
     # Carregando a imagem
-    imagem = carregarImagemNetpbm(caminhoImagem)
+    try:
+        imagem = carregarImagemNetpbm(caminhoImagem)
+    except Exception:
+        imagem = carregarImagemTIF(caminhoImagem)
 
     # Organização dos valores dos pixels da matriz em uma lista única
     listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
@@ -414,6 +424,41 @@ def aplicarRealceLinear(valor, a, b, maxNiveisImagem):
         
     return valorRealcado
 
+def equalizarHistograma(caminhoImagem):
+    # Carregando a imagem
+    imagem = carregarImagemTIF(caminhoImagem)
+
+    # Organizando os pixels em uma lista
+    listaPixels = [pixel for linha in imagem["matrizPixels"] for pixel in linha]
+
+    # Distribuição de frequência de cada intensidade na imagem
+    frequencias = np.zeros(imagem["maxNiveis"] + 1)
+    contagemValores = Counter(listaPixels)
+    for valor in contagemValores:
+        frequencias[valor] = contagemValores[valor]
+
+    # Total de pixels na imagem
+    totalPixels = imagem["largura"] * imagem["altura"]
+
+    # Cálculo do novo valor de cada valor da imagem para equalizar seu histograma
+    novosValores = [
+        round((imagem["maxNiveis"] / totalPixels) * sum(frequencias[:valor + 1])) for valor in range(imagem["maxNiveis"] + 1)
+    ]
+
+    # Definindo o cabeçalho da imagem PGM de saída
+    conteudo = f"P2\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    # Substituindo os valores da imagem pelos valores equalizados
+    for linha in imagem["matrizPixels"]:
+        for pixel in linha:
+            conteudo += f"{novosValores[pixel]} "
+        conteudo += "\n"
+
+    # Salvando a imagem PGM
+    nomeImagemOriginal = caminhoImagem.replace(".tif", "")
+    nomeImagem = f"{nomeImagemOriginal}-Equalizado.pgm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
@@ -425,10 +470,15 @@ def aplicarRealceLinear(valor, a, b, maxNiveisImagem):
 # converterPPMparaPGM("Fig4.ppm")
 # aplicarEscalaCinza("Fig4.ppm")
 # alterarValoresRGB("Fig4.ppm", valorG=0, valorB=0)
+
 # realceLinear("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("Entrada_EscalaCinza.pgm")
 # histogramaValoresPixels("img/RealceLinear-Entrada_EscalaCinza.pgm")
+
 # realceLinear("Fig1.ppm")
 # histogramaValoresPixels("Fig1.ppm")
 # histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
-carregarImagemTIF("Fig0316(1)(top_left).tif")
+
+equalizarHistograma("Fig0316(1)(top_left).tif")
+histogramaValoresPixels("Fig0316(1)(top_left).tif")
+histogramaValoresPixels("img/Fig0316(1)(top_left)-Equalizado.pgm")
