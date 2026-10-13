@@ -480,5 +480,9 @@ def equalizarHistograma(caminhoImagem):
 # histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
 
 equalizarHistograma("Fig0316(1)(top_left).tif")
-histogramaValoresPixels("Fig0316(1)(top_left).tif")
+# histogramaValoresPixels("Fig0316(1)(top_left).tif")
 histogramaValoresPixels("img/Fig0316(1)(top_left)-Equalizado.pgm")
+
+equalizarHistograma("Fig0316(2)(2nd_from_top).tif")
+equalizarHistograma("Fig0316(3)(third_from_top).tif")
+equalizarHistograma("Fig0316(4)(bottom_left).tif")
