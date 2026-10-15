@@ -459,6 +459,45 @@ def equalizarHistograma(caminhoImagem):
     nomeImagem = f"{nomeImagemOriginal}-Equalizado.pgm"
     salvarImagem(nomeImagem, conteudo)
 
+def comprimirRLE(caminhoImagem):
+    # Carregando a imagem
+    imagem = carregarImagemNetpbm(caminhoImagem)
+
+    pixelRepetido = -1
+    quantRepeticoes = 0
+
+    # Iterando sobre uma cópia da matriz de pixels
+    for linha in imagem["matrizPixels"][:]:
+        for i in range(imagem["largura"]):
+            if quantRepeticoes == 0:
+                quantRepeticoes += 1
+                pixelRepetido = linha[i]
+            if linha[i] == pixelRepetido:
+                quantRepeticoes += 1
+            elif quantRepeticoes > 1:
+                indiceQuant = i - quantRepeticoes
+                
+                indicePrimPixel = indiceQuant + 1
+                indicesValoresRepetidos = range(indicePrimPixel, i)
+                
+                imagem["matrizPixels"] = np.delete(imagem["matrizPixels"], indicesValoresRepetidos)
+                linha.insert(indiceQuant, -quantRepeticoes)
+
+                quantRepeticoes = 1
+                pixelRepetido = linha[i]
+
+    # Definindo o cabeçalho da imagem comprimida
+    cabecalho = f"{imagem['codigoFormato']}\n{imagem['largura']} {imagem['altura']}\n{imagem['maxNiveis']}\n"
+
+    for linha in imagem["matrizPixels"]:
+        for valor in linha:
+            conteudo += f"{valor} "
+        conteudo += "\n"
+
+    nomeImagemOriginal = caminhoImagem.replace(".pgm", "")
+    nomeImagem = f"{nomeImagemOriginal}-Comprimido.pgm"
+    salvarImagem(nomeImagem, conteudo)
+
 # Execução das funções
 
 # converterNiveisIntensidade("Entrada_EscalaCinza.pgm", 5)
@@ -479,10 +518,12 @@ def equalizarHistograma(caminhoImagem):
 # histogramaValoresPixels("Fig1.ppm")
 # histogramaValoresPixels("img/RealceLinear-Fig1.ppm")
 
-equalizarHistograma("Fig0316(1)(top_left).tif")
+# equalizarHistograma("Fig0316(1)(top_left).tif")
 # histogramaValoresPixels("Fig0316(1)(top_left).tif")
-histogramaValoresPixels("img/Fig0316(1)(top_left)-Equalizado.pgm")
+# histogramaValoresPixels("img/Fig0316(1)(top_left)-Equalizado.pgm")
 
-equalizarHistograma("Fig0316(2)(2nd_from_top).tif")
-equalizarHistograma("Fig0316(3)(third_from_top).tif")
-equalizarHistograma("Fig0316(4)(bottom_left).tif")
+# equalizarHistograma("Fig0316(2)(2nd_from_top).tif")
+# equalizarHistograma("Fig0316(3)(third_from_top).tif")
+# equalizarHistograma("Fig0316(4)(bottom_left).tif")
+
+comprimirRLE("Entrada_EscalaCinza.pgm")
